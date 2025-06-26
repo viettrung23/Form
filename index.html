@@ -15,12 +15,14 @@
   <h2>ĐƠN NGHỈ PHÉP</h2>
   <form id="leave-form">
     <label>Bộ phận:</label>
-    <input list="departmentList" id="department" required>
-    <datalist id="departmentList"></datalist>
+    <select id="department" required>
+      <option value="">-- Chọn bộ phận --</option>
+    </select>
 
     <label>Vị trí:</label>
-    <input list="positionList" id="position" required>
-    <datalist id="positionList"></datalist>
+    <select id="position" required>
+      <option value="">-- Chọn vị trí --</option>
+    </select>
 
     <label>Người làm đơn:</label>
     <input list="employeeList" id="employee" required>
@@ -63,8 +65,9 @@
     <textarea id="remoteWork" required></textarea>
 
     <label>Người nhận bàn giao:</label>
-    <input list="handoverList" id="handoverTo" required>
-    <datalist id="handoverList"></datalist>
+    <select id="handoverTo" required>
+      <option value="">-- Chọn người nhận --</option>
+    </select>
 
     <label>Vị trí người nhận bàn giao:</label>
     <input type="text" id="handoverPosition" readonly>
@@ -85,6 +88,7 @@
 
         initDepartment();
         populateHandoverDropdown();
+        populateEmployeeDatalist();
       } catch (err) {
         alert("Không lấy được danh sách nhân sự từ hệ thống.");
       }
@@ -100,36 +104,34 @@
 
     function initDepartment() {
       const departments = [...new Set(data.map(d => d["BỘ PHẬN"]))];
-      const list = document.getElementById("departmentList");
-      list.innerHTML = "";
+      department.innerHTML = '<option value="">-- Chọn bộ phận --</option>';
       departments.forEach(dept => {
         const opt = document.createElement("option");
         opt.value = dept;
-        list.appendChild(opt);
+        opt.textContent = dept;
+        department.appendChild(opt);
       });
     }
 
     function updatePositions() {
       const dept = department.value;
       const positions = [...new Set(data.filter(d => d["BỘ PHẬN"] === dept).map(d => d["VỊ TRÍ"]))];
-      const list = document.getElementById("positionList");
-      list.innerHTML = "";
+      position.innerHTML = '<option value="">-- Chọn vị trí --</option>';
       positions.forEach(pos => {
         const opt = document.createElement("option");
         opt.value = pos;
-        list.appendChild(opt);
+        opt.textContent = pos;
+        position.appendChild(opt);
       });
     }
 
-    function updateEmployees() {
-      const dept = department.value;
-      const pos = position.value;
-      const employees = data.filter(d => d["BỘ PHẬN"] === dept && d["VỊ TRÍ"] === pos);
+    function populateEmployeeDatalist() {
       const list = document.getElementById("employeeList");
       list.innerHTML = "";
-      employees.forEach(e => {
+      const names = [...new Set(data.map(d => d["HỌ VÀ TÊN"]))];
+      names.forEach(name => {
         const opt = document.createElement("option");
-        opt.value = e["HỌ VÀ TÊN"];
+        opt.value = name;
         list.appendChild(opt);
       });
     }
@@ -142,23 +144,21 @@
         handoverEmail.value = user["EMAIL ALIAS"];
       } else {
         department.value = user["BỘ PHẬN"];
+        updatePositions();
         position.value = user["VỊ TRÍ"];
         email.value = user["EMAIL ALIAS"];
       }
     }
 
     function populateHandoverDropdown() {
-      const list = document.getElementById("handoverList");
-      list.innerHTML = "";
+      handoverTo.innerHTML = '<option value="">-- Chọn người nhận --</option>';
       data.forEach(e => {
         const opt = document.createElement("option");
         opt.value = e["HỌ VÀ TÊN"];
-        list.appendChild(opt);
+        opt.textContent = e["HỌ VÀ TÊN"];
+        handoverTo.appendChild(opt);
       });
     }
-
-    document.getElementById("startDate").addEventListener("change", calculateDaysOff);
-    document.getElementById("endDate").addEventListener("change", calculateDaysOff);
 
     function calculateDaysOff() {
       const start = new Date(document.getElementById("startDate").value);
@@ -171,10 +171,11 @@
       }
     }
 
-    department.addEventListener("input", updatePositions);
-    position.addEventListener("input", updateEmployees);
+    department.addEventListener("change", updatePositions);
     employee.addEventListener("input", () => fillEmailFromName(employee.value));
-    handoverTo.addEventListener("input", () => fillEmailFromName(handoverTo.value, true));
+    handoverTo.addEventListener("change", () => fillEmailFromName(handoverTo.value, true));
+    document.getElementById("startDate").addEventListener("change", calculateDaysOff);
+    document.getElementById("endDate").addEventListener("change", calculateDaysOff);
 
     document.getElementById("leave-form").addEventListener("submit", e => {
       e.preventDefault();
