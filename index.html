@@ -15,12 +15,14 @@
   <h2>ĐƠN NGHỈ PHÉP</h2>
   <form id="leave-form">
     <label>Bộ phận:</label>
-    <input list="departmentList" id="department" required>
-    <datalist id="departmentList"></datalist>
+    <select id="department" required>
+      <option value="">-- Chọn bộ phận --</option>
+    </select>
 
     <label>Vị trí:</label>
-    <input list="positionList" id="position" required>
-    <datalist id="positionList"></datalist>
+    <select id="position" required>
+      <option value="">-- Chọn vị trí --</option>
+    </select>
 
     <label>Người làm đơn:</label>
     <input list="employeeList" id="employee" required>
@@ -82,39 +84,36 @@
       try {
         const res = await fetch('https://automation.starglobal3d.cloud/webhook/72344435-89bd-4173-8415-fc1c3e609354');
         data = await res.json();
-        initSelects();
+        initDropdowns();
       } catch (err) {
         alert("Không lấy được danh sách nhân sự từ hệ thống.");
       }
     }
 
-    function initSelects() {
+    function initDropdowns() {
       const departments = [...new Set(data.map(d => d["BỘ PHẬN"]))];
       const positions = [...new Set(data.map(d => d["VỊ TRÍ"]))];
       const names = [...new Set(data.map(d => d["HỌ VÀ TÊN"]))];
 
-      const deptList = document.getElementById("departmentList");
-      const posList = document.getElementById("positionList");
+      const dept = document.getElementById("department");
+      const pos = document.getElementById("position");
       const empList = document.getElementById("employeeList");
       const handoverList = document.getElementById("handoverList");
-
-      deptList.innerHTML = "";
-      posList.innerHTML = "";
-      empList.innerHTML = "";
-      handoverList.innerHTML = "";
 
       departments.forEach(val => {
         const opt = document.createElement("option");
         opt.value = val;
-        deptList.appendChild(opt);
+        dept.appendChild(opt);
       });
 
       positions.forEach(val => {
         const opt = document.createElement("option");
         opt.value = val;
-        posList.appendChild(opt);
+        pos.appendChild(opt);
       });
 
+      empList.innerHTML = "";
+      handoverList.innerHTML = "";
       names.forEach(val => {
         const opt1 = document.createElement("option");
         const opt2 = document.createElement("option");
@@ -124,54 +123,48 @@
       });
     }
 
-    function autoUpdateFromSelection() {
-      const name = document.getElementById("employee").value.trim();
-      const position = document.getElementById("position").value.trim();
-      const department = document.getElementById("department").value.trim();
+    const dept = document.getElementById("department");
+    const pos = document.getElementById("position");
+    const emp = document.getElementById("employee");
+    const email = document.getElementById("email");
+    const handoverTo = document.getElementById("handoverTo");
+    const handoverPosition = document.getElementById("handoverPosition");
+    const handoverEmail = document.getElementById("handoverEmail");
 
-      let filtered = data;
+    dept.addEventListener("change", () => {
+      pos.value = "";
+      emp.value = "";
+      email.value = "";
+    });
 
-      if (name) filtered = filtered.filter(d => d["HỌ VÀ TÊN"] === name);
-      if (position) filtered = filtered.filter(d => d["VỊ TRÍ"] === position);
-      if (department) filtered = filtered.filter(d => d["BỘ PHẬN"] === department);
-
-      if (filtered.length === 1) {
-        const d = filtered[0];
-        if (!document.getElementById("employee").value) document.getElementById("employee").value = d["HỌ VÀ TÊN"];
-        if (!document.getElementById("position").value) document.getElementById("position").value = d["VỊ TRÍ"];
-        if (!document.getElementById("department").value) document.getElementById("department").value = d["BỘ PHẬN"];
-        if (!document.getElementById("email").value) document.getElementById("email").value = d["EMAIL ALIAS"];
+    pos.addEventListener("change", () => {
+      emp.value = "";
+      email.value = "";
+      const selected = data.find(d => d["VỊ TRÍ"] === pos.value);
+      if (selected) {
+        dept.value = selected["BỘ PHẬN"];
       }
+    });
 
-      filterSuggestions();
-    }
-
-    function filterSuggestions() {
-      const pos = document.getElementById("position").value.trim();
-      const dept = document.getElementById("department").value.trim();
-
-      let list = data;
-
-      if (pos) list = list.filter(d => d["VỊ TRÍ"] === pos);
-      if (dept) list = list.filter(d => d["BỘ PHẬN"] === dept);
-
-      const names = [...new Set(list.map(d => d["HỌ VÀ TÊN"]))];
-      const employeeList = document.getElementById("employeeList");
-      employeeList.innerHTML = "";
-      names.forEach(n => {
-        const opt = document.createElement("option");
-        opt.value = n;
-        employeeList.appendChild(opt);
-      });
-    }
-
-    function fillHandoverInfo(name) {
-      const user = data.find(d => d["HỌ VÀ TÊN"] === name);
-      if (user) {
-        document.getElementById("handoverPosition").value = user["VỊ TRÍ"] || "";
-        if (user["EMAIL ALIAS"]) document.getElementById("handoverEmail").value = user["EMAIL ALIAS"];
+    emp.addEventListener("input", () => {
+      const selected = data.find(d => d["HỌ VÀ TÊN"] === emp.value);
+      if (selected) {
+        dept.value = selected["BỘ PHẬN"];
+        pos.value = selected["VỊ TRÍ"];
+        email.value = selected["EMAIL ALIAS"];
       }
-    }
+    });
+
+    handoverTo.addEventListener("input", () => {
+      const selected = data.find(d => d["HỌ VÀ TÊN"] === handoverTo.value);
+      if (selected) {
+        handoverPosition.value = selected["VỊ TRÍ"] || "";
+        if (selected["EMAIL ALIAS"]) handoverEmail.value = selected["EMAIL ALIAS"];
+      }
+    });
+
+    document.getElementById("startDate").addEventListener("change", calculateDaysOff);
+    document.getElementById("endDate").addEventListener("change", calculateDaysOff);
 
     function calculateDaysOff() {
       const start = new Date(document.getElementById("startDate").value);
@@ -184,20 +177,13 @@
       }
     }
 
-    document.getElementById("employee").addEventListener("input", autoUpdateFromSelection);
-    document.getElementById("position").addEventListener("input", autoUpdateFromSelection);
-    document.getElementById("department").addEventListener("input", autoUpdateFromSelection);
-    document.getElementById("handoverTo").addEventListener("input", () => fillHandoverInfo(document.getElementById("handoverTo").value));
-    document.getElementById("startDate").addEventListener("change", calculateDaysOff);
-    document.getElementById("endDate").addEventListener("change", calculateDaysOff);
-
     document.getElementById("leave-form").addEventListener("submit", e => {
       e.preventDefault();
       const payload = {
-        department: document.getElementById("department").value,
-        position: document.getElementById("position").value,
-        employeeName: document.getElementById("employee").value,
-        email: document.getElementById("email").value,
+        department: dept.value,
+        position: pos.value,
+        employeeName: emp.value,
+        email: email.value,
         shift: document.getElementById("shift").value,
         startDate: document.getElementById("startDate").value,
         endDate: document.getElementById("endDate").value,
@@ -206,9 +192,9 @@
         reason: document.getElementById("reason").value,
         currentWork: document.getElementById("currentWork").value,
         remoteWork: document.getElementById("remoteWork").value,
-        handoverTo: document.getElementById("handoverTo").value,
-        handoverPosition: document.getElementById("handoverPosition").value,
-        handoverEmail: document.getElementById("handoverEmail").value
+        handoverTo: handoverTo.value,
+        handoverPosition: handoverPosition.value,
+        handoverEmail: handoverEmail.value
       };
 
       fetch("https://automation.starglobal3d.cloud/webhook/0804d048-6bcc-4d3e-ad42-cdf4ec7ea6cc", {
