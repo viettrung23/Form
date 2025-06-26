@@ -90,16 +90,11 @@
 
     function initSelects() {
       const departments = [...new Set(data.map(d => d["BỘ PHẬN"]))];
-      const positions = [...new Set(data.map(d => d["VỊ TRÍ"]))];
-      const names = [...new Set(data.map(d => d["HỌ VÀ TÊN"]))];
-
       const deptList = document.getElementById("departmentList");
-      const posList = document.getElementById("positionList");
       const empList = document.getElementById("employeeList");
       const handoverList = document.getElementById("handoverList");
 
       deptList.innerHTML = "";
-      posList.innerHTML = "";
       empList.innerHTML = "";
       handoverList.innerHTML = "";
 
@@ -109,12 +104,7 @@
         deptList.appendChild(opt);
       });
 
-      positions.forEach(val => {
-        const opt = document.createElement("option");
-        opt.value = val;
-        posList.appendChild(opt);
-      });
-
+      const names = [...new Set(data.map(d => d["HỌ VÀ TÊN"]))];
       names.forEach(val => {
         const opt1 = document.createElement("option");
         const opt2 = document.createElement("option");
@@ -130,7 +120,6 @@
       const department = document.getElementById("department").value.trim();
 
       let filtered = data;
-
       if (name) filtered = filtered.filter(d => d["HỌ VÀ TÊN"] === name);
       if (position) filtered = filtered.filter(d => d["VỊ TRÍ"] === position);
       if (department) filtered = filtered.filter(d => d["BỘ PHẬN"] === department);
@@ -142,26 +131,36 @@
         if (!document.getElementById("department").value) document.getElementById("department").value = d["BỘ PHẬN"];
         if (!document.getElementById("email").value) document.getElementById("email").value = d["EMAIL ALIAS"];
       }
-
-      filterSuggestions();
     }
 
     function filterSuggestions() {
-      const pos = document.getElementById("position").value.trim();
       const dept = document.getElementById("department").value.trim();
+      const pos = document.getElementById("position").value.trim();
 
-      let list = data;
+      // Bước 1: lọc theo bộ phận
+      let filteredByDept = dept ? data.filter(d => d["BỘ PHẬN"] === dept) : data;
 
-      if (pos) list = list.filter(d => d["VỊ TRÍ"] === pos);
-      if (dept) list = list.filter(d => d["BỘ PHẬN"] === dept);
+      // Bước 2: cập nhật danh sách vị trí
+      const posList = document.getElementById("positionList");
+      const filteredPositions = [...new Set(filteredByDept.map(d => d["VỊ TRÍ"]))];
+      posList.innerHTML = "";
+      filteredPositions.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        posList.appendChild(opt);
+      });
 
-      const names = [...new Set(list.map(d => d["HỌ VÀ TÊN"]))];
-      const employeeList = document.getElementById("employeeList");
-      employeeList.innerHTML = "";
+      // Bước 3: lọc tiếp theo vị trí (nếu có)
+      let finalList = pos ? filteredByDept.filter(d => d["VỊ TRÍ"] === pos) : filteredByDept;
+
+      // Bước 4: cập nhật danh sách nhân viên
+      const empList = document.getElementById("employeeList");
+      const names = [...new Set(finalList.map(d => d["HỌ VÀ TÊN"]))];
+      empList.innerHTML = "";
       names.forEach(n => {
         const opt = document.createElement("option");
         opt.value = n;
-        employeeList.appendChild(opt);
+        empList.appendChild(opt);
       });
     }
 
@@ -184,9 +183,20 @@
       }
     }
 
+    document.getElementById("department").addEventListener("input", () => {
+      document.getElementById("position").value = "";
+      document.getElementById("employee").value = "";
+      autoUpdateFromSelection();
+      filterSuggestions();
+    });
+
+    document.getElementById("position").addEventListener("input", () => {
+      document.getElementById("employee").value = "";
+      autoUpdateFromSelection();
+      filterSuggestions();
+    });
+
     document.getElementById("employee").addEventListener("input", autoUpdateFromSelection);
-    document.getElementById("position").addEventListener("input", autoUpdateFromSelection);
-    document.getElementById("department").addEventListener("input", autoUpdateFromSelection);
     document.getElementById("handoverTo").addEventListener("input", () => fillHandoverInfo(document.getElementById("handoverTo").value));
     document.getElementById("startDate").addEventListener("change", calculateDaysOff);
     document.getElementById("endDate").addEventListener("change", calculateDaysOff);
