@@ -80,7 +80,7 @@
 
     async function fetchDataAndInit() {
       try {
-        const res = await fetch('https://automation.starglobal3d.cloud/webhook-test/72344435-89bd-4173-8415-fc1c3e609354');
+        const res = await fetch('https://automation.starglobal3d.cloud/webhook/72344435-89bd-4173-8415-fc1c3e609354');
         data = await res.json();
 
         initDepartment();
@@ -196,7 +196,7 @@
         handoverEmail: handoverEmail.value
       };
 
-      fetch("https://automation.starglobal3d.cloud/webhook-test/4888ef6d-f8ca-4400-9aac-fa2c41e78c58", {
+      fetch("https://automation.starglobal3d.cloud/webhook/0804d048-6bcc-4d3e-ad42-cdf4ec7ea6cc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
