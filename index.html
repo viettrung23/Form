@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>ĐƠN NGHỈ PHÉP</title>
+  <style>
+    body { font-family: Arial; max-width: 750px; margin: 40px auto; padding: 20px; }
+    label { display: block; margin-top: 14px; }
+    input, select, textarea { width: 100%; padding: 6px; margin-top: 4px; }
+    button { margin-top: 20px; padding: 10px 20px; }
+    h2 { text-align: center; }
+  </style>
+</head>
+<body>
+  <h2>ĐƠN NGHỈ PHÉP</h2>
+  <form id="leave-form">
+    <label>Bộ phận:</label>
+    <input list="departmentList" id="department" required>
+    <datalist id="departmentList"></datalist>
+
+    <label>Vị trí:</label>
+    <input list="positionList" id="position" required>
+    <datalist id="positionList"></datalist>
+
+    <label>Người làm đơn:</label>
+    <input list="employeeList" id="employee" required>
+    <datalist id="employeeList"></datalist>
+
+    <label>Email người làm đơn:</label>
+    <input type="email" id="email" readonly>
+
+    <label>Ca nghỉ:</label>
+    <select id="shift" required>
+      <option value="">-- Chọn ca nghỉ --</option>
+      <option value="Sáng">Sáng</option>
+      <option value="Chiều">Chiều</option>
+      <option value="Cả ngày">Cả ngày</option>
+    </select>
+
+    <label>Ngày bắt đầu:</label>
+    <input type="date" id="startDate" required>
+
+    <label>Ngày kết thúc:</label>
+    <input type="date" id="endDate" required>
+
+    <label>Số ngày nghỉ:</label>
+    <input type="number" id="daysOff" step="0.5" min="0.5" required>
+
+    <label>Nghỉ phép dưới dạng:</label>
+    <select id="leaveType" required>
+      <option value="">-- Chọn loại nghỉ --</option>
+      <option value="Dùng phép">Dùng phép</option>
+      <option value="Không lương">Không lương</option>
+    </select>
+
+    <label>Lý do nghỉ:</label>
+    <textarea id="reason" required></textarea>
+
+    <label>Công việc đang đảm nhận:</label>
+    <textarea id="currentWork" required></textarea>
+
+    <label>Công việc có thể làm từ xa:</label>
+    <textarea id="remoteWork" required></textarea>
+
+    <label>Người nhận bàn giao:</label>
+    <input list="handoverList" id="handoverTo" required>
+    <datalist id="handoverList"></datalist>
+
+    <label>Vị trí người nhận bàn giao:</label>
+    <input type="text" id="handoverPosition" readonly>
+
+    <label>Email người nhận bàn giao:</label>
+    <input type="email" id="handoverEmail" readonly>
+
+    <button type="submit">Gửi đơn nghỉ phép</button>
+  </form>
+
+  <script>
+    let data = [];
+
+    async function fetchDataAndInit() {
+      try {
+        const res = await fetch('https://automation.starglobal3d.cloud/webhook-test/72344435-89bd-4173-8415-fc1c3e609354');
+        data = await res.json();
+
+        initDepartment();
+        populateHandoverDropdown();
+      } catch (err) {
+        alert("Không lấy được danh sách nhân sự từ hệ thống.");
+      }
+    }
+
+    const department = document.getElementById("department");
+    const position = document.getElementById("position");
+    const employee = document.getElementById("employee");
+    const email = document.getElementById("email");
+    const handoverTo = document.getElementById("handoverTo");
+    const handoverPosition = document.getElementById("handoverPosition");
+    const handoverEmail = document.getElementById("handoverEmail");
+
+    function initDepartment() {
+      const departments = [...new Set(data.map(d => d["BỘ PHẬN"]))];
+      const list = document.getElementById("departmentList");
+      list.innerHTML = "";
+      departments.forEach(dept => {
+        const opt = document.createElement("option");
+        opt.value = dept;
+        list.appendChild(opt);
+      });
+    }
+
+    function updatePositions() {
+      const dept = department.value;
+      const positions = [...new Set(data.filter(d => d["BỘ PHẬN"] === dept).map(d => d["VỊ TRÍ"]))];
+      const list = document.getElementById("positionList");
+      list.innerHTML = "";
+      positions.forEach(pos => {
+        const opt = document.createElement("option");
+        opt.value = pos;
+        list.appendChild(opt);
+      });
+    }
+
+    function updateEmployees() {
+      const dept = department.value;
+      const pos = position.value;
+      const employees = data.filter(d => d["BỘ PHẬN"] === dept && d["VỊ TRÍ"] === pos);
+      const list = document.getElementById("employeeList");
+      list.innerHTML = "";
+      employees.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e["HỌ VÀ TÊN"];
+        list.appendChild(opt);
+      });
+    }
+
+    function fillEmailFromName(name, isHandover = false) {
+      const user = data.find(d => d["HỌ VÀ TÊN"] === name);
+      if (!user) return;
+      if (isHandover) {
+        handoverPosition.value = user["VỊ TRÍ"];
+        handoverEmail.value = user["EMAIL ALIAS"];
+      } else {
+        department.value = user["BỘ PHẬN"];
+        position.value = user["VỊ TRÍ"];
+        email.value = user["EMAIL ALIAS"];
+      }
+    }
+
+    function populateHandoverDropdown() {
+      const list = document.getElementById("handoverList");
+      list.innerHTML = "";
+      data.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e["HỌ VÀ TÊN"];
+        list.appendChild(opt);
+      });
+    }
+
+    document.getElementById("startDate").addEventListener("change", calculateDaysOff);
+    document.getElementById("endDate").addEventListener("change", calculateDaysOff);
+
+    function calculateDaysOff() {
+      const start = new Date(document.getElementById("startDate").value);
+      const end = new Date(document.getElementById("endDate").value);
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        const diff = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById("daysOff").value = diff;
+      } else {
+        document.getElementById("daysOff").value = "";
+      }
+    }
+
+    department.addEventListener("input", updatePositions);
+    position.addEventListener("input", updateEmployees);
+    employee.addEventListener("input", () => fillEmailFromName(employee.value));
+    handoverTo.addEventListener("input", () => fillEmailFromName(handoverTo.value, true));
+
+    document.getElementById("leave-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const payload = {
+        department: department.value,
+        position: position.value,
+        employeeName: employee.value,
+        email: email.value,
+        shift: document.getElementById("shift").value,
+        startDate: document.getElementById("startDate").value,
+        endDate: document.getElementById("endDate").value,
+        daysOff: document.getElementById("daysOff").value,
+        leaveType: document.getElementById("leaveType").value,
+        reason: document.getElementById("reason").value,
+        currentWork: document.getElementById("currentWork").value,
+        remoteWork: document.getElementById("remoteWork").value,
+        handoverTo: handoverTo.value,
+        handoverPosition: handoverPosition.value,
+        handoverEmail: handoverEmail.value
+      };
+
+      fetch("https://automation.starglobal3d.cloud/webhook-test/4888ef6d-f8ca-4400-9aac-fa2c41e78c58", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(res => {
+        if (res.ok) {
+          alert("Đơn đã được gửi thành công!");
+          setTimeout(() => window.location.reload(), 100);
+        } else {
+          alert("Đã xảy ra lỗi khi gửi đơn.");
+        }
+      }).catch(err => alert("Lỗi khi gửi đơn: " + err.message));
+    });
+
+    fetchDataAndInit();
+  </script>
+</body>
+</html>
