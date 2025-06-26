@@ -15,14 +15,12 @@
   <h2>ĐƠN NGHỈ PHÉP</h2>
   <form id="leave-form">
     <label>Bộ phận:</label>
-    <select id="department" required>
-      <option value="">-- Chọn bộ phận --</option>
-    </select>
+    <input list="departmentList" id="department" required>
+    <datalist id="departmentList"></datalist>
 
     <label>Vị trí:</label>
-    <select id="position" required>
-      <option value="">-- Chọn vị trí --</option>
-    </select>
+    <input list="positionList" id="position" required>
+    <datalist id="positionList"></datalist>
 
     <label>Người làm đơn:</label>
     <input list="employeeList" id="employee" required>
@@ -95,27 +93,28 @@
       const positions = [...new Set(data.map(d => d["VỊ TRÍ"]))];
       const names = [...new Set(data.map(d => d["HỌ VÀ TÊN"]))];
 
-      const deptSelect = document.getElementById("department");
-      const posSelect = document.getElementById("position");
+      const deptList = document.getElementById("departmentList");
+      const posList = document.getElementById("positionList");
       const empList = document.getElementById("employeeList");
       const handoverList = document.getElementById("handoverList");
+
+      deptList.innerHTML = "";
+      posList.innerHTML = "";
+      empList.innerHTML = "";
+      handoverList.innerHTML = "";
 
       departments.forEach(val => {
         const opt = document.createElement("option");
         opt.value = val;
-        opt.textContent = val;
-        deptSelect.appendChild(opt);
+        deptList.appendChild(opt);
       });
 
       positions.forEach(val => {
         const opt = document.createElement("option");
         opt.value = val;
-        opt.textContent = val;
-        posSelect.appendChild(opt);
+        posList.appendChild(opt);
       });
 
-      empList.innerHTML = "";
-      handoverList.innerHTML = "";
       names.forEach(val => {
         const opt1 = document.createElement("option");
         const opt2 = document.createElement("option");
@@ -127,8 +126,8 @@
 
     function autoUpdateFromSelection() {
       const name = document.getElementById("employee").value.trim();
-      const position = document.getElementById("position").value;
-      const department = document.getElementById("department").value;
+      const position = document.getElementById("position").value.trim();
+      const department = document.getElementById("department").value.trim();
 
       let filtered = data;
 
@@ -138,9 +137,9 @@
 
       if (filtered.length === 1) {
         const d = filtered[0];
-        if (!name) document.getElementById("employee").value = d["HỌ VÀ TÊN"];
-        if (!position) document.getElementById("position").value = d["VỊ TRÍ"];
-        if (!department) document.getElementById("department").value = d["BỘ PHẬN"];
+        if (!document.getElementById("employee").value) document.getElementById("employee").value = d["HỌ VÀ TÊN"];
+        if (!document.getElementById("position").value) document.getElementById("position").value = d["VỊ TRÍ"];
+        if (!document.getElementById("department").value) document.getElementById("department").value = d["BỘ PHẬN"];
         if (!document.getElementById("email").value) document.getElementById("email").value = d["EMAIL ALIAS"];
       }
 
@@ -148,10 +147,11 @@
     }
 
     function filterSuggestions() {
-      const pos = document.getElementById("position").value;
-      const dept = document.getElementById("department").value;
+      const pos = document.getElementById("position").value.trim();
+      const dept = document.getElementById("department").value.trim();
 
       let list = data;
+
       if (pos) list = list.filter(d => d["VỊ TRÍ"] === pos);
       if (dept) list = list.filter(d => d["BỘ PHẬN"] === dept);
 
@@ -185,8 +185,8 @@
     }
 
     document.getElementById("employee").addEventListener("input", autoUpdateFromSelection);
-    document.getElementById("position").addEventListener("change", autoUpdateFromSelection);
-    document.getElementById("department").addEventListener("change", autoUpdateFromSelection);
+    document.getElementById("position").addEventListener("input", autoUpdateFromSelection);
+    document.getElementById("department").addEventListener("input", autoUpdateFromSelection);
     document.getElementById("handoverTo").addEventListener("input", () => fillHandoverInfo(document.getElementById("handoverTo").value));
     document.getElementById("startDate").addEventListener("change", calculateDaysOff);
     document.getElementById("endDate").addEventListener("change", calculateDaysOff);
