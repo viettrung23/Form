@@ -201,39 +201,71 @@
     document.getElementById("startDate").addEventListener("change", calculateDaysOff);
     document.getElementById("endDate").addEventListener("change", calculateDaysOff);
 
-    document.getElementById("leave-form").addEventListener("submit", e => {
-      e.preventDefault();
-      const payload = {
-        department: document.getElementById("department").value,
-        position: document.getElementById("position").value,
-        employeeName: document.getElementById("employee").value,
-        email: document.getElementById("email").value,
-        shift: document.getElementById("shift").value,
-        startDate: document.getElementById("startDate").value,
-        endDate: document.getElementById("endDate").value,
-        daysOff: document.getElementById("daysOff").value,
-        leaveType: document.getElementById("leaveType").value,
-        reason: document.getElementById("reason").value,
-        currentWork: document.getElementById("currentWork").value,
-        remoteWork: document.getElementById("remoteWork").value,
-        handoverTo: document.getElementById("handoverTo").value,
-        handoverPosition: document.getElementById("handoverPosition").value,
-        handoverEmail: document.getElementById("handoverEmail").value
-      };
+document.getElementById("leave-form").addEventListener("submit", e => {
+  e.preventDefault();
 
-      fetch("https://automation.starglobal3d.cloud/webhook/0804d048-6bcc-4d3e-ad42-cdf4ec7ea6cc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }).then(res => {
-        if (res.ok) {
-          alert("Đơn đã được gửi thành công!");
-          setTimeout(() => window.location.reload(), 100);
-        } else {
-          alert("Đã xảy ra lỗi khi gửi đơn.");
-        }
-      }).catch(err => alert("Lỗi khi gửi đơn: " + err.message));
-    });
+  const department = document.getElementById("department").value.trim();
+  const position = document.getElementById("position").value.trim();
+  const employeeName = document.getElementById("employee").value.trim();
+  const handoverName = document.getElementById("handoverTo").value.trim();
+
+  const validDepartments = new Set(data.map(d => d["BỘ PHẬN"]));
+  const validPositions = new Set(data.map(d => d["VỊ TRÍ"]));
+  const validNames = new Set(data.map(d => d["HỌ VÀ TÊN"]));
+
+  if (!validDepartments.has(department)) {
+    alert("Vui lòng chọn *Bộ phận* từ danh sách có sẵn.");
+    return;
+  }
+
+  if (!validPositions.has(position)) {
+    alert("Vui lòng chọn *Vị trí* từ danh sách có sẵn.");
+    return;
+  }
+
+  if (!validNames.has(employeeName)) {
+    alert("Vui lòng chọn *Người làm đơn* từ danh sách có sẵn.");
+    return;
+  }
+
+  if (!validNames.has(handoverName)) {
+    alert("Vui lòng chọn *Người nhận bàn giao* từ danh sách có sẵn.");
+    return;
+  }
+
+  // Tạo payload sau khi xác thực hợp lệ
+  const payload = {
+    department,
+    position,
+    employeeName,
+    email: document.getElementById("email").value,
+    shift: document.getElementById("shift").value,
+    startDate: document.getElementById("startDate").value,
+    endDate: document.getElementById("endDate").value,
+    daysOff: document.getElementById("daysOff").value,
+    leaveType: document.getElementById("leaveType").value,
+    reason: document.getElementById("reason").value,
+    currentWork: document.getElementById("currentWork").value,
+    remoteWork: document.getElementById("remoteWork").value,
+    handoverTo: handoverName,
+    handoverPosition: document.getElementById("handoverPosition").value,
+    handoverEmail: document.getElementById("handoverEmail").value
+  };
+
+  fetch("https://automation.starglobal3d.cloud/webhook/0804d048-6bcc-4d3e-ad42-cdf4ec7ea6cc", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }).then(res => {
+    if (res.ok) {
+      alert("Đơn đã được gửi thành công!");
+      setTimeout(() => window.location.reload(), 100);
+    } else {
+      alert("Đã xảy ra lỗi khi gửi đơn.");
+    }
+  }).catch(err => alert("Lỗi khi gửi đơn: " + err.message));
+});
+
 
     fetchDataAndInit();
   </script>
